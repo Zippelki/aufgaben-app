@@ -141,8 +141,16 @@ function openAccount() {
     $("#a_signup").onclick = () => auth("signup");
   } else {
     b.innerHTML = '<p>Angemeldet als <b>' + esc(session.user.email) + '</b>.</p>' +
-      '<p><button class="btn" id="a_sync">Jetzt abgleichen</button> <button class="btn ghost" id="a_out">Abmelden</button></p>';
+      '<p><button class="btn" id="a_sync">Jetzt abgleichen</button> <button class="btn ghost" id="a_out">Abmelden</button></p>' +
+      '<div class="field"><label for="a_newpw">Neues Passwort</label><input type="password" id="a_newpw" autocomplete="new-password"></div>' +
+      '<p><button class="btn ghost" id="a_setpw">Passwort ändern</button></p>';
     $("#a_sync").onclick = () => sync();
+    $("#a_setpw").onclick = async () => {
+      const password = $("#a_newpw").value;
+      if (password.length < 6) return toast("Mindestens 6 Zeichen");
+      const r = await sb.auth.updateUser({ password });
+      toast(r.error ? "Fehler: " + r.error.message : "Passwort geändert");
+    };
     $("#a_out").onclick = async () => { await sb.auth.signOut(); openAccount(); };
   }
   $("#account").classList.add("open");
@@ -151,7 +159,7 @@ async function auth(kind) {
   const email = $("#a_mail").value.trim(), password = $("#a_pw").value;
   if (!email || !password) return toast("Bitte E-Mail und Passwort eingeben");
   const r = kind === "login" ? await sb.auth.signInWithPassword({ email, password }) : await sb.auth.signUp({ email, password, options: { emailRedirectTo: location.origin + location.pathname } });
-  if (r.error) return toast("Fehler: " + r.error.message);
+  if (r.error) return toast(r.error.code === "invalid_credentials" ? "E-Mail oder Passwort falsch" : "Fehler: " + r.error.message);
   if (kind === "signup" && !r.data.session) toast("Bitte bestätige die E-Mail, die dir gerade geschickt wurde");
   else { toast("Angemeldet"); $("#account").classList.remove("open"); }
 }
