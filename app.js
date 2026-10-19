@@ -120,7 +120,11 @@ async function initSupabase() {
     sb = createClient(c.supabaseUrl, c.supabaseAnonKey, { auth: { persistSession: true, autoRefreshToken: true } });
     const { data } = await sb.auth.getSession();
     session = data.session;
-    sb.auth.onAuthStateChange((_e, s) => { session = s; updateSyncLabel(); if (s) sync(); });
+    sb.auth.onAuthStateChange((e, s) => {
+      session = s; updateSyncLabel(); if (s) sync();
+      // Nach Klick auf den Link aus der "Passwort vergessen" Mail direkt das Feld für das neue Passwort zeigen.
+      if (e === "PASSWORD_RECOVERY") { openAccount(); toast("Bitte jetzt ein neues Passwort eingeben"); }
+    });
     updateSyncLabel();
     if (session) await sync();
   } catch (e) { console.error(e); setSync("err", "Abgleich nicht erreichbar"); }
@@ -136,8 +140,15 @@ function openAccount() {
     b.innerHTML = '<p>Melde dich an, damit deine Aufgaben auf Mac und iPhone gleich sind.</p>' +
       '<div class="field"><label for="a_mail">E-Mail</label><input type="email" id="a_mail" autocomplete="username"></div>' +
       '<div class="field"><label for="a_pw">Passwort</label><input type="password" id="a_pw" autocomplete="current-password"></div>' +
-      '<p><button class="btn" id="a_login">Anmelden</button> <button class="btn ghost" id="a_signup">Konto anlegen</button></p>';
+      '<p><button class="btn" id="a_login">Anmelden</button> <button class="btn ghost" id="a_signup">Konto anlegen</button></p>' +
+      '<p><button class="btn ghost" id="a_reset">Passwort vergessen</button></p>';
     $("#a_login").onclick = () => auth("login");
+    $("#a_reset").onclick = async () => {
+      const email = $("#a_mail").value.trim();
+      if (!email) return toast("Bitte zuerst die E-Mail eingeben");
+      const r = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+      toast(r.error ? "Fehler: " + r.error.message : "Mail ist unterwegs. Link darin öffnen, dann neues Passwort setzen.");
+    };
     $("#a_signup").onclick = () => auth("signup");
   } else {
     b.innerHTML = '<p>Angemeldet als <b>' + esc(session.user.email) + '</b>.</p>' +

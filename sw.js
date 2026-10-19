@@ -1,5 +1,5 @@
 // Offline Unterstützung: App Dateien zwischenspeichern, Daten kommen aus localStorage bzw. Supabase.
-const CACHE = "aufgaben-v3";
+const CACHE = "aufgaben-v4";
 const FILES = ["./", "index.html", "style.css", "app.js", "config.js", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-180.png"];
 
 self.addEventListener("install", (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES)).then(() => self.skipWaiting())); });
