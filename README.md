@@ -7,6 +7,7 @@ Eigene Aufgaben App als Ersatz für die Notion „Aufgabenliste Arbeit“. Läuf
 * Automatisierungen (einzeln schaltbar): Begonnen am, Abgeschlossen am, Wiederöffnen, Archivieren nach X Tagen, Priorität Hoch bei naher Fälligkeit
 * Import der 30 Notion Aufgaben per SQL (liegt bewusst nicht in diesem öffentlichen Repository)
 * Abgleich zwischen Geräten über Supabase (optional, sonst nur lokal)
+* Konto: Passwort ändern (angemeldet) und Passwort vergessen per Mail (Site URL in Supabase muss auf die App Adresse zeigen)
 
 ## Dateien
 | Datei | Zweck |
