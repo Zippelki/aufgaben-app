@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Meine Aufgaben</title>
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#191919" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Aufgaben">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Meine Aufgaben</h1>
+      <p class="sub" id="sub">Lade Aufgaben ...</p>
+    </div>
+    <button class="sync" id="syncBtn" title="Konto und Abgleich"><span class="dot" id="syncDot"></span><span id="syncText">Lokal</span></button>
+  </header>
+
+  <div class="bar">
+    <div class="tabs" id="tabs">
+      <button data-v="liste" class="on">Liste</button>
+      <button data-v="board">Board</button>
+      <button data-v="auto">Automatisierungen</button>
+    </div>
+    <input class="search" id="q" placeholder="Suchen" type="search">
+    <button class="btn" id="neu">Neue Aufgabe</button>
+  </div>
+
+  <div class="chips" id="chips">
+    <span class="chip on" data-f="offen">Offen</span>
+    <span class="chip" data-f="heute">Heute und überfällig</span>
+    <span class="chip" data-f="woche">Diese Woche</span>
+    <span class="chip" data-f="hoch">Priorität hoch</span>
+    <span class="chip" data-f="erledigt">Erledigt</span>
+    <span class="chip" data-f="alle">Alle</span>
+  </div>
+
+  <main id="view"></main>
+</div>
+
+<div class="panel" id="panel">
+  <div class="sheet">
+    <h2 id="ptitle">Aufgabe</h2>
+    <div class="field"><label for="f_titel">Bezeichnung</label><input type="text" id="f_titel"></div>
+    <div class="field"><label for="f_status">Status</label><select id="f_status"></select></div>
+    <div class="field"><label for="f_prio">Priorität</label><select id="f_prio"></select></div>
+    <div class="field"><label for="f_faellig">Fällig</label><input type="date" id="f_faellig"></div>
+    <div class="field"><label for="f_begonnen">Begonnen am</label><input type="date" id="f_begonnen"></div>
+    <div class="field"><label for="f_abgeschlossen">Abgeschlossen am</label><input type="date" id="f_abgeschlossen"></div>
+    <div class="field"><label for="f_notiz">Notizen</label></div>
+    <textarea id="f_notiz" placeholder="Notizen, Quelle, nächste Schritte"></textarea>
+    <div class="actions">
+      <button class="danger" id="del">Löschen</button>
+      <span><button class="btn ghost" id="cancel">Abbrechen</button> <button class="btn" id="save">Speichern</button></span>
+    </div>
+  </div>
+</div>
+
+<div class="panel" id="account">
+  <div class="sheet">
+    <h2>Konto und Abgleich</h2>
+    <div id="accBody"></div>
+    <div class="actions"><span></span><button class="btn ghost" id="accClose">Schließen</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="config.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>
