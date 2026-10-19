@@ -150,7 +150,7 @@ function openAccount() {
 async function auth(kind) {
   const email = $("#a_mail").value.trim(), password = $("#a_pw").value;
   if (!email || !password) return toast("Bitte E-Mail und Passwort eingeben");
-  const r = kind === "login" ? await sb.auth.signInWithPassword({ email, password }) : await sb.auth.signUp({ email, password });
+  const r = kind === "login" ? await sb.auth.signInWithPassword({ email, password }) : await sb.auth.signUp({ email, password, options: { emailRedirectTo: location.origin + location.pathname } });
   if (r.error) return toast("Fehler: " + r.error.message);
   if (kind === "signup" && !r.data.session) toast("Bitte bestätige die E-Mail, die dir gerade geschickt wurde");
   else { toast("Angemeldet"); $("#account").classList.remove("open"); }
