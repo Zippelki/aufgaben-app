@@ -30,6 +30,3 @@ Eigene Aufgaben App als Ersatz für die Notion „Aufgabenliste Arbeit“. Läuf
 
 ## Lokal testen
 `python3 -m http.server 8765` im Ordner, dann http://localhost:8765 öffnen.
-
-## Zippel Lauf (Laufband App)
-Ordner `laufband/`: eigene Steuerung für das Sportstech sTread Lite über Bluetooth (FTMS Standard). Auf dem iPhone in der kostenlosen App Bluefy öffnen, da Safari kein Web Bluetooth kann. Trainings werden nur lokal im Browser gespeichert.
