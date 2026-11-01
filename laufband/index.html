@@ -1,0 +1,709 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111417">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,-apple-system,sans-serif}img{max-width:100%}</style>
+<title>Zippel Laufband</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Layout: one screen training console, Tartanbahn red as the only accent, bottom tab bar */
+:root{
+  --bg:#ECEEF1; --surface:#FFFFFF; --surface2:#F5F6F8; --fg:#15181C; --muted:#5A626C; --line:#D3D8DE;
+  --track:#B9412A; --track-ink:#FFFFFF; --track-soft:#F6E3DE;
+  --ok:#1D7F47; --warn:#9A6512; --bad:#B42318;
+  --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111417; --surface:#1A1E23; --surface2:#21262C; --fg:#EDF0F3; --muted:#9AA3AD; --line:#2C3239;
+  --track:#E2623F; --track-ink:#1A0D09; --track-soft:#3A221B;
+  --ok:#4CC27F; --warn:#E3A84A; --bad:#F2705F; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#111417; --surface:#1A1E23; --surface2:#21262C; --fg:#EDF0F3; --muted:#9AA3AD; --line:#2C3239;
+  --track:#E2623F; --track-ink:#1A0D09; --track-soft:#3A221B;
+  --ok:#4CC27F; --warn:#E3A84A; --bad:#F2705F; color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.4;-webkit-tap-highlight-color:transparent}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:10}
+.app{max-width:560px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px calc(92px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:14px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{font-family:var(--display);font-weight:700;font-size:26px;letter-spacing:.02em;text-transform:uppercase;line-height:1}
+.brand span{color:var(--track)}
+.chip{display:inline-flex;align-items:center;gap:7px;padding:6px 11px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-size:13px;font-weight:600;color:var(--muted);white-space:nowrap;max-width:60vw;overflow:hidden;text-overflow:ellipsis}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex:none}
+.chip.on .dot{background:var(--ok)} .chip.demo .dot{background:var(--warn)} .chip.on{color:var(--fg)}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--track);outline-offset:2px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 18px;border-radius:12px;font-weight:600;font-size:16px;background:var(--surface);border:1px solid var(--line)}
+.btn.primary{background:var(--track);color:var(--track-ink);border-color:var(--track)}
+.btn.ghost{background:transparent}
+.btn:disabled{opacity:.45;cursor:default}
+.btn.small{min-height:38px;font-size:14px;padding:0 12px;border-radius:10px}
+.view[hidden]{display:none!important}
+.view{display:flex;flex-direction:column;gap:14px}
+
+/* speed hero */
+.hero{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px 18px 14px;overflow:hidden}
+.hero .lbl{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.speed{display:flex;align-items:baseline;gap:8px;font-family:var(--display);font-weight:700;font-variant-numeric:tabular-nums;line-height:.9}
+.speed b{font-size:clamp(76px,24vw,118px);font-weight:700}
+.speed i{font-style:normal;font-size:24px;color:var(--muted);font-weight:600}
+.lanes{position:absolute;right:-10px;top:0;bottom:0;width:38%;display:flex;gap:10px;justify-content:flex-end;opacity:.9;pointer-events:none}
+.lanes span{width:6px;background:repeating-linear-gradient(to bottom,var(--track) 0 22px,transparent 22px 40px);opacity:.18;animation:run linear infinite;animation-duration:var(--lanespeed,0s)}
+@keyframes run{from{background-position:0 0}to{background-position:0 40px}}
+@media (prefers-reduced-motion: reduce){.lanes span{animation:none}}
+.target{margin-top:6px;font-size:13px;color:var(--muted);min-height:18px}
+
+.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.m{background:var(--surface);padding:10px 12px;min-width:0}
+.m .k{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.m .v{font-family:var(--display);font-weight:600;font-size:28px;font-variant-numeric:tabular-nums;line-height:1.1;white-space:nowrap}
+.m .v small{font-size:14px;color:var(--muted);font-weight:500;margin-left:3px}
+
+.ctrl{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.ctrl-row{display:flex;align-items:center;gap:10px}
+.ctrl-row .name{font-weight:600;font-size:14px;width:68px;flex:none}
+.stepper{display:flex;align-items:center;gap:8px;flex:1;min-width:0}
+.stepper .btn{width:52px;padding:0;font-size:24px;flex:none}
+.stepper output{flex:1;text-align:center;font-family:var(--display);font-weight:600;font-size:26px;font-variant-numeric:tabular-nums}
+.presets{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.presets::-webkit-scrollbar{display:none}
+.presets button{flex:none;min-height:34px;padding:0 12px;border-radius:999px;background:var(--surface2);border:1px solid var(--line);font-weight:600;font-size:14px;font-variant-numeric:tabular-nums}
+.presets button.sel{background:var(--track-soft);border-color:var(--track);color:var(--fg)}
+
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.actions .btn{min-height:58px;font-size:18px}
+.actions .stop{background:transparent;color:var(--bad);border-color:var(--bad)}
+.actions .wide{grid-column:1/-1}
+
+.notice{border-radius:14px;padding:14px;background:var(--surface);border:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.notice h3{margin:0;font-size:16px}
+.notice p{margin:0;color:var(--muted)}
+.notice.warn{border-color:var(--warn)}
+.notice .row{display:flex;gap:8px;flex-wrap:wrap}
+
+.prog-banner{background:var(--track-soft);border:1px solid var(--track);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.prog-banner .top{display:flex;justify-content:space-between;gap:10px;font-weight:600}
+.prog-banner .sub{font-size:14px;color:var(--muted)}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--track);width:0}
+
+h2{font-family:var(--display);font-weight:700;font-size:24px;text-transform:uppercase;letter-spacing:.03em;margin:4px 0 0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.card h3{margin:0;font-size:17px}
+.card p{margin:0;color:var(--muted);font-size:14px}
+.profile{display:flex;align-items:flex-end;gap:2px;height:44px}
+.profile i{flex:1;background:var(--track);opacity:.75;border-radius:2px 2px 0 0;min-width:2px}
+.meta{display:flex;gap:14px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+.week{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.week .m{border:1px solid var(--line);border-radius:12px}
+.hist{display:flex;flex-direction:column;gap:8px}
+.hrow{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.hrow .d{font-weight:600}
+.hrow .s{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.empty{color:var(--muted);text-align:center;padding:24px 8px;border:1px dashed var(--line);border-radius:14px}
+
+label.field{display:flex;flex-direction:column;gap:6px;font-weight:600;font-size:14px}
+label.field span{font-weight:400;color:var(--muted);font-size:13px}
+input,select{font:inherit;color:var(--fg);background:var(--surface2);border:1px solid var(--line);border-radius:10px;min-height:44px;padding:0 12px;width:100%}
+
+nav.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding:6px max(10px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(10px,env(safe-area-inset-left,0px));display:flex;justify-content:center;z-index:5}
+nav.tabs .in{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;width:100%;max-width:560px}
+nav.tabs button{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 0;border-radius:10px;font-size:12px;font-weight:600;color:var(--muted)}
+nav.tabs button svg{width:24px;height:24px}
+nav.tabs button[aria-current="page"]{color:var(--track)}
+
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:600;font-size:14px;z-index:20;max-width:calc(100% - 32px);text-align:center}
+.log{font-family:ui-monospace,Menlo,monospace;font-size:12px;color:var(--muted);background:var(--surface2);border-radius:10px;padding:10px;max-height:180px;overflow:auto;white-space:pre-wrap;word-break:break-word}
+.confirm{display:flex;gap:6px}
+</style>
+
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">Zippel <span>Lauf</span></div>
+    <div id="conn" class="chip" role="status"><i class="dot"></i><span id="connTxt">Nicht verbunden</span></div>
+  </header>
+
+  <!-- TRAINING -->
+  <section id="v-train" class="view">
+    <div id="noBle" class="notice warn" hidden>
+      <h3>Bluetooth ist in diesem Browser nicht verfügbar</h3>
+      <p>Safari und Chrome auf dem iPhone können sich nicht per Bluetooth mit dem Laufband verbinden. Öffne diese Seite in der kostenlosen App Bluefy. Bis dahin kannst du alles im Demo Modus ausprobieren.</p>
+      <div class="row"><button class="btn small" id="demoBtn1" type="button">Demo starten</button></div>
+    </div>
+
+    <div id="connectBox" class="notice">
+      <h3>Laufband verbinden</h3>
+      <p>Laufband einschalten, Sicherheitsclip einstecken, dann tippen. Wähle in der Liste dein sTread Lite aus.</p>
+      <div class="row">
+        <button class="btn primary" id="connectBtn" type="button">Verbinden</button>
+        <button class="btn ghost small" id="connectAllBtn" type="button">Alle Geräte zeigen</button>
+        <button class="btn ghost small" id="demoBtn2" type="button">Demo</button>
+      </div>
+    </div>
+
+    <div id="progBanner" class="prog-banner" hidden>
+      <div class="top"><span id="pbName"></span><span id="pbLeft" style="font-variant-numeric:tabular-nums"></span></div>
+      <div class="sub" id="pbStep"></div>
+      <div class="bar"><i id="pbBar"></i></div>
+      <div class="row" style="display:flex;gap:8px"><button class="btn small" id="pbEnd" type="button">Programm beenden</button></div>
+    </div>
+
+    <div class="hero">
+      <div class="lanes" aria-hidden="true"><span></span><span></span><span></span></div>
+      <div class="lbl">Geschwindigkeit</div>
+      <div class="speed"><b id="spd">0,0</b><i>km/h</i></div>
+      <div class="target" id="tgt"></div>
+    </div>
+
+    <div class="metrics">
+      <div class="m"><div class="k">Zeit</div><div class="v" id="mTime">0:00</div></div>
+      <div class="m"><div class="k">Strecke</div><div class="v"><span id="mDist">0,00</span><small>km</small></div></div>
+      <div class="m"><div class="k">Kalorien</div><div class="v"><span id="mKcal">0</span><small>kcal</small></div></div>
+      <div class="m"><div class="k">Steigung</div><div class="v"><span id="mInc">0</span><small>%</small></div></div>
+      <div class="m"><div class="k">Pace</div><div class="v"><span id="mPace">–</span><small>/km</small></div></div>
+      <div class="m"><div class="k">Puls</div><div class="v"><span id="mHr">–</span><small>bpm</small></div></div>
+    </div>
+
+    <div class="ctrl">
+      <div class="ctrl-row"><div class="name">Tempo</div>
+        <div class="stepper"><button class="btn" id="sMinus" type="button" aria-label="Tempo runter">−</button><output id="sOut">0,0</output><button class="btn" id="sPlus" type="button" aria-label="Tempo hoch">+</button></div>
+      </div>
+      <div class="presets" id="sPre"></div>
+      <div class="ctrl-row"><div class="name">Steigung</div>
+        <div class="stepper"><button class="btn" id="iMinus" type="button" aria-label="Steigung runter">−</button><output id="iOut">0 %</output><button class="btn" id="iPlus" type="button" aria-label="Steigung hoch">+</button></div>
+      </div>
+      <div class="presets" id="iPre"></div>
+    </div>
+
+    <div class="actions">
+      <button class="btn primary" id="startBtn" type="button">Start</button>
+      <button class="btn" id="pauseBtn" type="button">Pause</button>
+      <button class="btn stop wide" id="stopBtn" type="button">Stopp und speichern</button>
+    </div>
+  </section>
+
+  <!-- PROGRAMME -->
+  <section id="v-prog" class="view" hidden>
+    <h2>Programme</h2>
+    <p style="margin:0;color:var(--muted)">Das Programm stellt Tempo und Steigung automatisch ein. Fünf Sekunden vor jeder Änderung kommt ein Ton. Mit den Tasten kannst du jederzeit selbst nachregeln.</p>
+    <div id="progList" style="display:flex;flex-direction:column;gap:10px"></div>
+  </section>
+
+  <!-- VERLAUF -->
+  <section id="v-hist" class="view" hidden>
+    <h2>Verlauf</h2>
+    <div class="week">
+      <div class="m"><div class="k">Diese Woche</div><div class="v"><span id="wKm">0</span><small>km</small></div></div>
+      <div class="m"><div class="k">Zeit</div><div class="v" id="wTime">0:00</div></div>
+      <div class="m"><div class="k">Kalorien</div><div class="v"><span id="wKcal">0</span><small>kcal</small></div></div>
+    </div>
+    <div id="histList" class="hist"></div>
+  </section>
+
+  <!-- EINSTELLUNGEN -->
+  <section id="v-set" class="view" hidden>
+    <h2>Einstellungen</h2>
+    <div class="card">
+      <label class="field">Körpergewicht in kg<span>Nur für die Kalorienschätzung, falls das Laufband selbst keine Kalorien sendet.</span><input id="setWeight" type="number" inputmode="decimal" min="40" max="200" step="1"></label>
+      <label class="field">Höchsttempo in km/h<span>Schutzgrenze: Die App stellt nie schneller als diesen Wert ein. Das Laufband kann bis 20 km/h.</span><input id="setMax" type="number" inputmode="decimal" min="3" max="20" step="0.5"></label>
+      <label class="field">Schrittweite Tempo<select id="setStep"><option value="0.1">0,1 km/h</option><option value="0.5">0,5 km/h</option><option value="1">1,0 km/h</option></select></label>
+      <label class="field">Bildschirm wach halten<select id="setWake"><option value="1">Ja, während des Trainings</option><option value="0">Nein</option></select></label>
+    </div>
+    <div class="card">
+      <h3>Verbindung</h3>
+      <p id="devInfo">Kein Gerät verbunden.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn small" id="disconnectBtn" type="button">Trennen</button><button class="btn small" id="hrBtn" type="button">Pulsgurt verbinden</button></div>
+    </div>
+    <div class="card">
+      <h3>Protokoll</h3>
+      <p>Hilft bei der Fehlersuche, falls etwas nicht klappt.</p>
+      <div id="log" class="log"></div>
+    </div>
+  </section>
+</div>
+
+<nav class="tabs" aria-label="Bereiche"><div class="in">
+  <button type="button" data-tab="train" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13" cy="4" r="2"/><path d="M7 21l3-6 3 2 1 4M10 15l1-5 4 3 3-1M8 10l3-1"/></svg>Training</button>
+  <button type="button" data-tab="prog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18M5 20v-6M10 20V9M15 20v-8M20 20V5"/></svg>Programme</button>
+  <button type="button" data-tab="hist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Verlauf</button>
+  <button type="button" data-tab="set"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Einstellungen</button>
+</div></nav>
+<div id="toast" class="toast" hidden></div>
+
+<script>
+/* ============ FTMS protocol helpers (pure, testable) ============ */
+const FTMS = {
+  SERVICE: 0x1826, TREADMILL_DATA: 0x2acd, CONTROL_POINT: 0x2ad9, STATUS: 0x2ada,
+  SPEED_RANGE: 0x2ad4, INCLINE_RANGE: 0x2ad5, FEATURE: 0x2acc,
+  HR_SERVICE: 0x180d, HR_MEASUREMENT: 0x2a37
+};
+function parseTreadmillData(dv){
+  const r = {}; let o = 0; const len = dv.byteLength;
+  const need = n => o + n <= len;
+  if (!need(2)) return r;
+  const f = dv.getUint16(o, true); o += 2;
+  try {
+    if (!(f & 0x0001)) { if(!need(2)) return r; r.speed = dv.getUint16(o, true) / 100; o += 2; }
+    if (f & 0x0002) { if(!need(2)) return r; r.avgSpeed = dv.getUint16(o, true) / 100; o += 2; }
+    if (f & 0x0004) { if(!need(3)) return r; r.distance = dv.getUint8(o) | (dv.getUint8(o+1) << 8) | (dv.getUint8(o+2) << 16); o += 3; }
+    if (f & 0x0008) { if(!need(4)) return r; r.incline = dv.getInt16(o, true) / 10; r.ramp = dv.getInt16(o+2, true) / 10; o += 4; }
+    if (f & 0x0010) { if(!need(4)) return r; o += 4; }
+    if (f & 0x0020) { if(!need(1)) return r; o += 1; }
+    if (f & 0x0040) { if(!need(1)) return r; o += 1; }
+    if (f & 0x0080) { if(!need(5)) return r; const k = dv.getUint16(o, true); if (k !== 0xffff) r.kcal = k; o += 5; }
+    if (f & 0x0100) { if(!need(1)) return r; const h = dv.getUint8(o); if (h > 0) r.hr = h; o += 1; }
+    if (f & 0x0200) { if(!need(1)) return r; o += 1; }
+    if (f & 0x0400) { if(!need(2)) return r; r.elapsed = dv.getUint16(o, true); o += 2; }
+    if (f & 0x0800) { if(!need(2)) return r; o += 2; }
+    if (f & 0x1000) { if(!need(4)) return r; r.power = dv.getInt16(o+2, true); o += 4; }
+  } catch(e) {}
+  return r;
+}
+function parseHeartRate(dv){
+  const f = dv.getUint8(0);
+  return (f & 1) ? dv.getUint16(1, true) : dv.getUint8(1);
+}
+function parseRange(dv, signedMin){
+  const min = signedMin ? dv.getInt16(0, true) : dv.getUint16(0, true);
+  const max = signedMin ? dv.getInt16(2, true) : dv.getUint16(2, true);
+  const inc = dv.getUint16(4, true);
+  return {min, max, inc};
+}
+const CMD = {
+  requestControl: () => [0x00],
+  start: () => [0x07],
+  stop: () => [0x08, 0x01],
+  pause: () => [0x08, 0x02],
+  speed: kmh => { const v = Math.round(kmh * 100); return [0x02, v & 0xff, (v >> 8) & 0xff]; },
+  incline: pct => { const v = Math.round(pct * 10) & 0xffff; return [0x03, v & 0xff, (v >> 8) & 0xff]; }
+};
+function kcalPerSecond(kmh, inclinePct, kg){
+  if (kmh <= 0) return 0;
+  const v = kmh * 1000 / 60, g = Math.max(0, inclinePct) / 100;
+  const vo2 = kmh < 8 ? (0.1 * v + 1.8 * v * g + 3.5) : (0.2 * v + 0.9 * v * g + 3.5);
+  return vo2 * kg / 1000 * 5 / 60;
+}
+
+/* ============ App ============ */
+const $ = id => document.getElementById(id);
+const fmt1 = n => n.toLocaleString('de-DE', {minimumFractionDigits:1, maximumFractionDigits:1});
+const fmt2 = n => n.toLocaleString('de-DE', {minimumFractionDigits:2, maximumFractionDigits:2});
+const fmtTime = s => { s = Math.max(0, Math.round(s)); const h = Math.floor(s/3600), m = Math.floor(s%3600/60), x = s%60; return h ? `${h}:${String(m).padStart(2,'0')}:${String(x).padStart(2,'0')}` : `${m}:${String(x).padStart(2,'0')}`; };
+const store = {
+  get(k, d){ try { const v = localStorage.getItem('zl-' + k); return v == null ? d : JSON.parse(v); } catch(e){ return d; } },
+  set(k, v){ try { localStorage.setItem('zl-' + k, JSON.stringify(v)); } catch(e){} }
+};
+const settings = Object.assign({weight: 85, max: 16, step: 0.5, wake: 1}, store.get('settings', {}));
+
+const live = {speed:0, incline:0, hr:null, devDist:null, devKcal:null, devElapsed:null};
+const range = {speed:{min:1, max:20, inc:0.1}, incline:{min:-5, max:16, inc:1}};
+let target = {speed: 0, incline: 0};
+let session = null; // {start, time, dist, kcal, inclineSum, program, counters}
+let machine = null;
+let program = null; // {def, elapsed, stepIdx, warned}
+
+function log(msg){
+  const el = $('log'); const t = new Date().toLocaleTimeString('de-DE');
+  el.textContent = `${t}  ${msg}\n` + el.textContent.slice(0, 4000);
+}
+let toastT;
+function toast(msg){ const t = $('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 2600); }
+
+/* ---------- Bluetooth FTMS machine ---------- */
+function bleMachine(){
+  let device, server, cp, pending = null, queue = Promise.resolve(), hasControl = false;
+  const m = { kind: 'ble', name: '' };
+
+  function write(bytes){
+    return new Promise((resolve, reject) => {
+      const op = bytes[0];
+      const t = setTimeout(() => { pending = null; resolve({op, result: null}); }, 3000);
+      pending = {op, done: r => { clearTimeout(t); pending = null; resolve(r); }};
+      const data = new Uint8Array(bytes);
+      const w = cp.writeValueWithResponse ? cp.writeValueWithResponse(data) : cp.writeValue(data);
+      w.catch(e => { clearTimeout(t); pending = null; reject(e); });
+    });
+  }
+  async function send(bytes, label){
+    const run = async () => {
+      if (!cp) throw new Error('Nicht verbunden');
+      if (!hasControl && bytes[0] !== 0x00) await ctrl();
+      let r = await write(bytes);
+      if (r.result === 0x05) { hasControl = false; await ctrl(); r = await write(bytes); }
+      const txt = {1:'ok',2:'nicht unterstützt',3:'ungültiger Wert',4:'fehlgeschlagen',5:'keine Steuerrechte'}[r.result] || 'keine Antwort';
+      log(`${label}: ${txt}`);
+      return r;
+    };
+    queue = queue.then(run, run);
+    return queue;
+  }
+  async function ctrl(){ const r = await write(CMD.requestControl()); hasControl = r.result === 1 || r.result === null; log('Steuerung anfordern: ' + (r.result === 1 ? 'ok' : r.result === null ? 'keine Antwort' : 'Code ' + r.result)); }
+
+  m.connect = async (acceptAll) => {
+    const opts = acceptAll
+      ? {acceptAllDevices: true, optionalServices: [FTMS.SERVICE, FTMS.HR_SERVICE]}
+      : {filters: [{services: [FTMS.SERVICE]}], optionalServices: [FTMS.HR_SERVICE]};
+    device = await navigator.bluetooth.requestDevice(opts);
+    m.name = device.name || 'Laufband';
+    device.addEventListener('gattserverdisconnected', onDisconnect);
+    await open();
+  };
+  async function open(){
+    log('Verbinde mit ' + m.name);
+    server = await device.gatt.connect();
+    let svc;
+    try { svc = await server.getPrimaryService(FTMS.SERVICE); }
+    catch(e){ throw new Error('Dieses Gerät hat keinen FTMS Laufband Dienst. Wähle das sTread Lite in der Liste.'); }
+    try { const sr = await (await svc.getCharacteristic(FTMS.SPEED_RANGE)).readValue(); const r = parseRange(sr, false); range.speed = {min: r.min/100, max: r.max/100, inc: Math.max(r.inc/100, 0.1)}; log(`Tempobereich ${fmt1(range.speed.min)} bis ${fmt1(range.speed.max)} km/h`); } catch(e){ log('Tempobereich nicht lesbar, nutze 1 bis 20 km/h'); }
+    try { const ir = await (await svc.getCharacteristic(FTMS.INCLINE_RANGE)).readValue(); const r = parseRange(ir, true); range.incline = {min: r.min/10, max: r.max/10, inc: Math.max(r.inc/10, 0.5)}; log(`Steigungsbereich ${fmt1(range.incline.min)} bis ${fmt1(range.incline.max)} %`); } catch(e){ log('Steigungsbereich nicht lesbar, nutze 0 bis 16 %'); range.incline = {min: 0, max: 16, inc: 1}; }
+    const td = await svc.getCharacteristic(FTMS.TREADMILL_DATA);
+    td.addEventListener('characteristicvaluechanged', ev => onData(parseTreadmillData(ev.target.value)));
+    await td.startNotifications();
+    try {
+      cp = await svc.getCharacteristic(FTMS.CONTROL_POINT);
+      cp.addEventListener('characteristicvaluechanged', ev => {
+        const dv = ev.target.value;
+        if (dv.getUint8(0) === 0x80 && pending && pending.op === dv.getUint8(1)) pending.done({op: dv.getUint8(1), result: dv.getUint8(2)});
+      });
+      await cp.startNotifications();
+      hasControl = false;
+    } catch(e){ cp = null; log('Kein Steuerkanal: nur Anzeige möglich'); }
+    try {
+      const st = await svc.getCharacteristic(FTMS.STATUS);
+      st.addEventListener('characteristicvaluechanged', ev => onStatus(ev.target.value));
+      await st.startNotifications();
+    } catch(e){}
+    log('Verbunden');
+  }
+  let retries = 0;
+  async function onDisconnect(){
+    log('Verbindung getrennt'); cp = null; hasControl = false; setConn();
+    if (m.manual) return;
+    if (retries < 3) { retries++; try { await new Promise(r => setTimeout(r, 1500)); await open(); retries = 0; setConn(); toast('Wieder verbunden'); } catch(e){ log('Neuverbindung fehlgeschlagen'); } }
+  }
+  function onStatus(dv){
+    const op = dv.getUint8(0);
+    if (op === 0x02) { const p = dv.byteLength > 1 ? dv.getUint8(1) : 1; log(p === 2 ? 'Laufband pausiert' : 'Laufband gestoppt'); if (p === 1 && session) finishSession(); }
+    if (op === 0x04) log('Laufband gestartet');
+  }
+  m.connected = () => !!(device && device.gatt.connected);
+  m.canControl = () => !!cp;
+  m.start = () => send(CMD.start(), 'Start');
+  m.pause = () => send(CMD.pause(), 'Pause');
+  m.stop = () => send(CMD.stop(), 'Stopp');
+  m.setSpeed = v => send(CMD.speed(v), 'Tempo ' + fmt1(v));
+  m.setIncline = v => send(CMD.incline(v), 'Steigung ' + fmt1(v));
+  m.disconnect = () => { m.manual = true; if (device && device.gatt.connected) device.gatt.disconnect(); };
+  return m;
+}
+
+/* ---------- Demo machine ---------- */
+function demoMachine(){
+  const m = {kind:'demo', name:'Demo Laufband'}; let running = false, sp = 0, inc = 0, tSp = 0, tInc = 0, dist = 0, el = 0, kc = 0, timer;
+  m.connect = async () => { timer = setInterval(tick, 1000); log('Demo Modus aktiv'); };
+  function tick(){
+    const goal = running ? tSp : 0;
+    sp += Math.sign(goal - sp) * Math.min(0.5, Math.abs(goal - sp));
+    inc += Math.sign(tInc - inc) * Math.min(0.5, Math.abs(tInc - inc));
+    if (sp > 0) { dist += sp / 3.6; el++; kc += kcalPerSecond(sp, inc, settings.weight); }
+    onData({speed: sp, incline: inc, distance: Math.round(dist), elapsed: el, kcal: Math.round(kc)});
+  }
+  m.connected = () => true; m.canControl = () => true;
+  m.start = async () => { running = true; if (!tSp) tSp = 3; };
+  m.pause = async () => { running = false; };
+  m.stop = async () => { running = false; tSp = 0; setTimeout(() => { dist = 0; el = 0; kc = 0; }, 3000); };
+  m.setSpeed = async v => { tSp = v; };
+  m.setIncline = async v => { tInc = v; };
+  m.disconnect = () => { clearInterval(timer); };
+  return m;
+}
+
+/* ---------- Heart rate strap (optional) ---------- */
+async function connectHr(){
+  if (!navigator.bluetooth) return toast('Bluetooth nicht verfügbar');
+  try {
+    const d = await navigator.bluetooth.requestDevice({filters:[{services:[FTMS.HR_SERVICE]}]});
+    const s = await d.gatt.connect();
+    const c = await (await s.getPrimaryService(FTMS.HR_SERVICE)).getCharacteristic(FTMS.HR_MEASUREMENT);
+    c.addEventListener('characteristicvaluechanged', ev => { live.hrStrap = parseHeartRate(ev.target.value); });
+    await c.startNotifications(); log('Pulsgurt verbunden: ' + (d.name || '')); toast('Pulsgurt verbunden');
+  } catch(e){ if (e.name !== 'NotFoundError') { log('Pulsgurt: ' + e.message); toast('Pulsgurt nicht verbunden'); } }
+}
+
+/* ---------- Data handling ---------- */
+function onData(d){
+  if (d.speed != null) live.speed = d.speed;
+  if (d.incline != null) live.incline = d.incline;
+  if (d.hr != null) live.hr = d.hr;
+  if (d.distance != null) live.devDist = d.distance;
+  if (d.kcal != null) live.devKcal = d.kcal;
+  if (d.elapsed != null) live.devElapsed = d.elapsed;
+  if (live.speed > 0 && !session) startSession();
+  if (session) {
+    track('dist', live.devDist); track('kcal', live.devKcal); track('elapsed', live.devElapsed);
+  }
+  if (pendingTargets && live.speed > 0) applyTargets();
+}
+// device counters: handle reset to zero mid session
+function track(key, raw){
+  if (raw == null) return; const c = session.counters[key] || (session.counters[key] = {base: raw, last: raw, acc: 0});
+  if (raw < c.last) c.acc += c.last - c.base, c.base = 0;
+  c.last = raw; c.value = c.acc + raw - c.base;
+}
+function startSession(){
+  session = {start: Date.now(), time: 0, dist: 0, kcal: 0, counters: {}, program: program ? program.def.name : null, idle: 0};
+  for (const k of ['dist','kcal','elapsed']) { const raw = k === 'dist' ? live.devDist : k === 'kcal' ? live.devKcal : live.devElapsed; if (raw != null) session.counters[k] = {base: raw, last: raw, acc: 0, value: 0}; }
+  wake(true); log('Training gestartet');
+}
+function sessionValues(){
+  if (!session) return {time:0, km:0, kcal:0};
+  const c = session.counters;
+  const time = c.elapsed && c.elapsed.value != null && c.elapsed.value > 0 ? c.elapsed.value : session.time;
+  const km = (c.dist && c.dist.value > 0 ? c.dist.value : session.dist) / 1000;
+  const kcal = c.kcal && c.kcal.value > 0 ? c.kcal.value : session.kcal;
+  return {time, km, kcal};
+}
+function finishSession(){
+  if (!session) return;
+  const v = sessionValues();
+  if (v.time >= 60) {
+    const h = store.get('history', []);
+    h.unshift({date: session.start, sec: Math.round(v.time), km: +v.km.toFixed(2), kcal: Math.round(v.kcal), program: session.program});
+    store.set('history', h.slice(0, 500));
+    toast(`Gespeichert: ${fmt2(v.km)} km in ${fmtTime(v.time)}`);
+  } else toast('Training unter einer Minute, nicht gespeichert');
+  session = null; program = null; target = {speed: 0, incline: live.incline}; wake(false); renderHistory();
+}
+
+/* ---------- 1 second clock ---------- */
+setInterval(() => {
+  if (session) {
+    if (live.speed > 0) {
+      session.time++; session.dist += live.speed / 3.6; session.kcal += kcalPerSecond(live.speed, live.incline, settings.weight); session.idle = 0;
+      if (program) programTick();
+    } else if (++session.idle > 120) { log('Zwei Minuten Stillstand, Training beendet'); finishSession(); }
+  }
+  render();
+}, 1000);
+
+/* ---------- Controls ---------- */
+function clampSpeed(v){ const max = Math.min(range.speed.max, settings.max); return Math.round(Math.min(max, Math.max(range.speed.min, v)) * 10) / 10; }
+function clampInc(v){ return Math.round(Math.min(range.incline.max, Math.max(range.incline.min, v)) * 2) / 2; }
+let sendT = {};
+function debounced(key, fn){ clearTimeout(sendT[key]); sendT[key] = setTimeout(fn, 350); }
+function needMachine(){ if (machine && machine.connected()) return true; toast('Erst Laufband verbinden'); return false; }
+function setSpeed(v, immediate){
+  if (!needMachine()) return; target.speed = clampSpeed(v); renderTargets();
+  const go = () => machine.setSpeed(target.speed).catch(e => log(e.message));
+  if (live.speed <= 0) { pendingTargets = true; toast('Wird übernommen, sobald das Band läuft'); return; }
+  immediate ? go() : debounced('s', go);
+}
+function setIncline(v, immediate){
+  if (!needMachine()) return; target.incline = clampInc(v); renderTargets();
+  const go = () => machine.setIncline(target.incline).catch(e => log(e.message));
+  immediate ? go() : debounced('i', go);
+}
+let pendingTargets = false;
+async function applyTargets(){
+  pendingTargets = false;
+  if (target.speed > 0) await machine.setSpeed(target.speed).catch(e => log(e.message));
+  await machine.setIncline(target.incline).catch(e => log(e.message));
+}
+async function start(){
+  if (!needMachine()) return;
+  if (target.speed <= 0) target.speed = clampSpeed(3);
+  pendingTargets = true; renderTargets();
+  try { await machine.start(); } catch(e){ log(e.message); toast('Start fehlgeschlagen, Start am Laufband drücken'); }
+}
+
+/* ---------- Programs ---------- */
+const PROGRAMS = [
+  {name:'Lockeres Gehen', desc:'Ruhiger Einstieg mit leichter Steigung.', steps:[[300,4.5,0,'Einlaufen'],[1200,5.5,2,'Gehen'],[300,4,0,'Auslaufen']]},
+  {name:'Bergwandern', desc:'Wechsel zwischen steil und flach bei gleichem Tempo. Viel Wirkung, wenig Belastung für die Gelenke.', steps:[[300,5,1,'Einlaufen'], ...Array.from({length:5}, () => [[180,5,7,'Berg'],[120,5,2,'Erholung']]).flat(), [300,4.5,0,'Auslaufen']]},
+  {name:'Fettverbrennung', desc:'Langes gleichmäßiges Training im mittleren Pulsbereich.', steps:[[300,5,1,'Einlaufen'],[1800,6,4,'Hauptteil'],[300,4.5,0,'Auslaufen']]},
+  {name:'Intervalle Laufen', desc:'Acht schnelle Minuten im Wechsel mit Gehpausen.', steps:[[300,6,1,'Einlaufen'], ...Array.from({length:8}, () => [[60,10,1,'Schnell'],[60,6,1,'Locker']]).flat(), [300,5,0,'Auslaufen']]},
+  {name:'Treppe hoch', desc:'Steigung wächst alle drei Minuten um zwei Prozent.', steps:[[300,5,0,'Einlaufen'],[180,5,2,'Stufe 1'],[180,5,4,'Stufe 2'],[180,5,6,'Stufe 3'],[180,5,8,'Stufe 4'],[180,5,10,'Stufe 5'],[180,5,6,'Abstieg'],[300,4.5,0,'Auslaufen']]}
+];
+const progTotal = p => p.steps.reduce((a, s) => a + s[0], 0);
+function renderPrograms(){
+  const el = $('progList'); el.innerHTML = '';
+  PROGRAMS.forEach((p, i) => {
+    const tot = progTotal(p), maxInc = Math.max(...p.steps.map(s => s[2]), 1);
+    const maxSp = Math.max(...p.steps.map(s => s[1]));
+    const card = document.createElement('div'); card.className = 'card';
+    const bars = p.steps.map(s => `<i style="flex:${s[0]};height:${20 + 80 * s[1] / Math.max(maxSp, 1)}%;opacity:${0.35 + 0.6 * s[2] / maxInc}"></i>`).join('');
+    card.innerHTML = `<h3>${p.name}</h3><p>${p.desc}</p><div class="profile" aria-hidden="true">${bars}</div>
+      <div class="meta"><span>${Math.round(tot/60)} min</span><span>bis ${fmt1(maxSp)} km/h</span><span>bis ${Math.max(...p.steps.map(s => s[2]))} %</span></div>
+      <div><button class="btn primary small" type="button" data-p="${i}">Programm starten</button></div>`;
+    el.appendChild(card);
+  });
+  el.querySelectorAll('[data-p]').forEach(b => b.onclick = () => startProgram(PROGRAMS[+b.dataset.p]));
+}
+function startProgram(def){
+  if (!needMachine()) return;
+  beep(0);
+  program = {def, elapsed: 0, stepIdx: 0, warned: -1};
+  if (session) session.program = def.name;
+  const s = def.steps[0]; target.speed = clampSpeed(s[1]); target.incline = clampInc(s[2]);
+  showTab('train'); toast(def.name + ' startet');
+  if (live.speed > 0) applyTargets(); else start();
+}
+function programTick(){
+  program.elapsed++;
+  const steps = program.def.steps; let acc = 0, idx = 0;
+  for (; idx < steps.length; idx++) { if (program.elapsed < acc + steps[idx][0]) break; acc += steps[idx][0]; }
+  if (idx >= steps.length) { toast('Programm geschafft'); beep(2); machine.stop().catch(()=>{}); finishSession(); return; }
+  const nextChange = acc + steps[idx][0] - program.elapsed;
+  if (nextChange === 5 && program.warned !== idx && idx + 1 < steps.length) { program.warned = idx; beep(1); }
+  if (idx !== program.stepIdx) {
+    program.stepIdx = idx; const s = steps[idx];
+    target.speed = clampSpeed(s[1]); target.incline = clampInc(s[2]);
+    machine.setSpeed(target.speed).catch(()=>{}); machine.setIncline(target.incline).catch(()=>{});
+    log(`Programm: ${s[3]}`);
+  }
+}
+let actx;
+function beep(kind){
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    if (kind === 0) return actx.resume();
+    const n = kind === 2 ? 3 : 2;
+    for (let i = 0; i < n; i++) { const o = actx.createOscillator(), g = actx.createGain(); o.frequency.value = kind === 2 ? 660 : 880; o.connect(g); g.connect(actx.destination); const t = actx.currentTime + i * 0.25; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.3, t + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18); o.start(t); o.stop(t + 0.2); }
+  } catch(e){}
+}
+
+/* ---------- Wake lock ---------- */
+let wl = null;
+async function wake(on){
+  try {
+    if (on && settings.wake == 1 && 'wakeLock' in navigator && !wl) { wl = await navigator.wakeLock.request('screen'); wl.addEventListener('release', () => wl = null); }
+    if (!on && wl) { await wl.release(); wl = null; }
+  } catch(e){}
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && session) wake(true); });
+
+/* ---------- Rendering ---------- */
+function setConn(){
+  const c = $('conn'), t = $('connTxt'); c.className = 'chip';
+  const ok = machine && machine.connected();
+  if (ok && machine.kind === 'demo') { c.classList.add('demo'); t.textContent = 'Demo Modus'; }
+  else if (ok) { c.classList.add('on'); t.textContent = machine.name + (machine.canControl() ? '' : ' (nur Anzeige)'); }
+  else t.textContent = machine && machine.kind === 'ble' ? 'Getrennt' : 'Nicht verbunden';
+  $('connectBox').hidden = !!ok;
+  $('devInfo').textContent = ok ? `${machine.name}. Tempo ${fmt1(range.speed.min)} bis ${fmt1(range.speed.max)} km/h, Steigung ${fmt1(range.incline.min)} bis ${fmt1(range.incline.max)} %.` : 'Kein Gerät verbunden.';
+  renderPresets();
+}
+function renderTargets(){
+  $('sOut').textContent = fmt1(target.speed); $('iOut').textContent = fmt1(target.incline).replace(',0','') + ' %';
+  document.querySelectorAll('#sPre button').forEach(b => b.classList.toggle('sel', +b.dataset.v === target.speed));
+  document.querySelectorAll('#iPre button').forEach(b => b.classList.toggle('sel', +b.dataset.v === target.incline));
+}
+function renderPresets(){
+  const max = Math.min(range.speed.max, settings.max);
+  const sp = [3,4,5,6,8,10,12,14,16,18].filter(v => v <= max);
+  const ip = [range.incline.min < 0 ? -2 : null, 0, 2, 4, 6, 8, 10, 12, 15].filter(v => v != null && v >= range.incline.min && v <= range.incline.max);
+  $('sPre').innerHTML = sp.map(v => `<button type="button" data-v="${v}">${v}</button>`).join('');
+  $('iPre').innerHTML = ip.map(v => `<button type="button" data-v="${v}">${v} %</button>`).join('');
+  $('sPre').querySelectorAll('button').forEach(b => b.onclick = () => setSpeed(+b.dataset.v, true));
+  $('iPre').querySelectorAll('button').forEach(b => b.onclick = () => setIncline(+b.dataset.v, true));
+  renderTargets();
+}
+function render(){
+  $('spd').textContent = fmt1(live.speed);
+  document.querySelector('.lanes').style.setProperty('--lanespeed', live.speed > 0 ? (3 / live.speed).toFixed(2) + 's' : '0s');
+  const diff = target.speed > 0 && Math.abs(target.speed - live.speed) >= 0.15 && live.speed > 0;
+  $('tgt').textContent = diff ? `Ziel ${fmt1(target.speed)} km/h wird angefahren` : (live.speed === 0 && session ? 'Band steht' : '');
+  const v = sessionValues();
+  $('mTime').textContent = fmtTime(v.time); $('mDist').textContent = fmt2(v.km); $('mKcal').textContent = Math.round(v.kcal);
+  $('mInc').textContent = fmt1(live.incline).replace(',0','');
+  if (live.speed >= 1) { const p = 60 / live.speed; $('mPace').textContent = `${Math.floor(p)}:${String(Math.round(p % 1 * 60) % 60).padStart(2,'0')}`; } else $('mPace').textContent = '–';
+  const hr = live.hrStrap || live.hr; $('mHr').textContent = hr || '–';
+  const pb = $('progBanner'); pb.hidden = !program;
+  if (program) {
+    const steps = program.def.steps, tot = progTotal(program.def); let acc = 0; for (let i = 0; i < program.stepIdx; i++) acc += steps[i][0];
+    const cur = steps[program.stepIdx], left = acc + cur[0] - program.elapsed, nxt = steps[program.stepIdx + 1];
+    $('pbName').textContent = program.def.name; $('pbLeft').textContent = 'noch ' + fmtTime(tot - program.elapsed);
+    $('pbStep').textContent = `${cur[3]}: ${fmt1(cur[1])} km/h, ${cur[2]} %` + (nxt ? `. In ${fmtTime(left)}: ${fmt1(nxt[1])} km/h, ${nxt[2]} %` : `. Ende in ${fmtTime(left)}`);
+    $('pbBar').style.width = (100 * program.elapsed / tot).toFixed(1) + '%';
+  }
+}
+function renderHistory(){
+  const h = store.get('history', []);
+  const now = new Date(), day = (now.getDay() + 6) % 7, monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day).getTime();
+  const wk = h.filter(x => x.date >= monday);
+  $('wKm').textContent = fmt1(wk.reduce((a, x) => a + x.km, 0)); $('wTime').textContent = fmtTime(wk.reduce((a, x) => a + x.sec, 0)); $('wKcal').textContent = wk.reduce((a, x) => a + x.kcal, 0);
+  const el = $('histList');
+  if (!h.length) { el.innerHTML = '<div class="empty">Noch kein Training gespeichert. Nach jedem Training ab einer Minute erscheint es hier automatisch.</div>'; return; }
+  el.innerHTML = h.map((x, i) => {
+    const d = new Date(x.date);
+    return `<div class="hrow"><div><div class="d">${d.toLocaleDateString('de-DE', {weekday:'short', day:'2-digit', month:'2-digit'})}, ${d.toLocaleTimeString('de-DE', {hour:'2-digit', minute:'2-digit'})}${x.program ? ' · ' + x.program : ''}</div>
+      <div class="s">${fmt2(x.km)} km · ${fmtTime(x.sec)} · ${x.kcal} kcal · Ø ${fmt1(x.sec ? x.km / (x.sec / 3600) : 0)} km/h</div></div>
+      <div class="confirm" data-i="${i}"><button class="btn small ghost" type="button" data-del>Löschen</button></div></div>`;
+  }).join('');
+  el.querySelectorAll('[data-del]').forEach(b => b.onclick = () => {
+    const box = b.parentElement, i = +box.dataset.i;
+    box.innerHTML = `<button class="btn small" type="button" data-yes style="color:var(--bad);border-color:var(--bad)">Wirklich löschen</button><button class="btn small ghost" type="button" data-no>Nein</button>`;
+    box.querySelector('[data-yes]').onclick = () => { const hh = store.get('history', []); hh.splice(i, 1); store.set('history', hh); renderHistory(); toast('Gelöscht'); };
+    box.querySelector('[data-no]').onclick = renderHistory;
+  });
+}
+function showTab(t){
+  ['train','prog','hist','set'].forEach(x => $('v-' + x).hidden = x !== t);
+  document.querySelectorAll('nav.tabs button').forEach(b => { if (b.dataset.tab === t) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
+  window.scrollTo(0, 0);
+}
+
+/* ---------- Wiring ---------- */
+async function connect(acceptAll){
+  if (!navigator.bluetooth) { $('noBle').hidden = false; toast('Bitte in Bluefy öffnen'); return; }
+  if (machine) machine.disconnect();
+  const m = bleMachine();
+  try { await m.connect(acceptAll); machine = m; toast('Verbunden mit ' + m.name); }
+  catch(e){ if (e.name === 'NotFoundError') { log('Keine Auswahl getroffen'); } else { log('Fehler: ' + e.message); toast(e.message.length < 90 ? e.message : 'Verbindung fehlgeschlagen'); } }
+  setConn();
+}
+async function demo(){ if (machine) machine.disconnect(); machine = demoMachine(); await machine.connect(); setConn(); toast('Demo Modus: alles wie echt, ohne Laufband'); }
+
+$('connectBtn').onclick = () => connect(false);
+$('connectAllBtn').onclick = () => connect(true);
+$('demoBtn1').onclick = demo; $('demoBtn2').onclick = demo;
+$('hrBtn').onclick = connectHr;
+$('disconnectBtn').onclick = () => { if (machine) { machine.disconnect(); machine = null; } setConn(); };
+$('sMinus').onclick = () => setSpeed((target.speed || live.speed) - settings.step);
+$('sPlus').onclick = () => setSpeed((target.speed || live.speed) + settings.step);
+$('iMinus').onclick = () => setIncline(target.incline - (range.incline.inc >= 1 ? 1 : 0.5));
+$('iPlus').onclick = () => setIncline(target.incline + (range.incline.inc >= 1 ? 1 : 0.5));
+$('startBtn').onclick = () => { beep(0); start(); };
+$('pauseBtn').onclick = () => { if (needMachine()) machine.pause().catch(e => log(e.message)); };
+$('stopBtn').onclick = async () => { if (machine && machine.connected()) await machine.stop().catch(e => log(e.message)); finishSession(); };
+$('pbEnd').onclick = () => { program = null; toast('Programm beendet, Training läuft weiter'); render(); };
+document.querySelectorAll('nav.tabs button').forEach(b => b.onclick = () => showTab(b.dataset.tab));
+
+$('setWeight').value = settings.weight; $('setMax').value = settings.max; $('setStep').value = String(settings.step); $('setWake').value = String(settings.wake);
+['setWeight','setMax','setStep','setWake'].forEach(id => $(id).onchange = () => {
+  settings.weight = Math.min(200, Math.max(40, +$('setWeight').value || 85));
+  settings.max = Math.min(20, Math.max(3, +$('setMax').value || 16));
+  settings.step = +$('setStep').value; settings.wake = +$('setWake').value;
+  store.set('settings', settings); renderPresets(); toast('Gespeichert');
+});
+
+if (!navigator.bluetooth) $('noBle').hidden = false;
+renderPrograms(); renderHistory(); setConn(); render();
+</script>
+
+</body>
+</html>
